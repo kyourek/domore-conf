@@ -1085,14 +1085,14 @@ public sealed class ConfContainerTest {
     [Test]
     public void IncludeExpandsSpecialFolderName() {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var localInclude = Path.Combine(localAppData, "Domore", "Conf", "Test", "include.conf");
+        var includeDirectory = Guid.NewGuid().ToString("N");
+        var localInclude = Path.Combine(localAppData, "Domore", "Conf", "Test", includeDirectory, "include.conf");
         try {
             Directory.CreateDirectory(Path.GetDirectoryName(localInclude));
             File.WriteAllText(localInclude, "depth = 27");
             Content = @"
                     depth = 24
-                    conf.INCLUDE = {LocalApplicationData}/Domore/Conf/Test/include.conf
-                ";
+                    conf.INCLUDE = {LocalApplicationData}/Domore/Conf/Test/" + includeDirectory + "/include.conf";
             Subject.Special = "conf";
             var actual = Subject.Configure(new Shipwreck(), key: "").Depth;
             var expected = 27;
@@ -1106,13 +1106,14 @@ public sealed class ConfContainerTest {
     [Test]
     public void IncludeExpandsEnvironmentVariable() {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var localInclude = Path.Combine(localAppData, "Domore", "Conf", "Test", "include.conf");
+        var includeDirectory = Guid.NewGuid().ToString("N");
+        var localInclude = Path.Combine(localAppData, "Domore", "Conf", "Test", includeDirectory, "include.conf");
         try {
             Directory.CreateDirectory(Path.GetDirectoryName(localInclude));
             File.WriteAllText(localInclude, "depth = 28");
             Content = @"
                     depth = 24
-                    conf.INCLUDE = %LOCALAPPDATA%/Domore/Conf/Test/include.conf";
+                    conf.INCLUDE = %LOCALAPPDATA%/Domore/Conf/Test/" + includeDirectory + "/include.conf";
             Subject.Special = "conf";
             var actual = Subject.Configure(new Shipwreck(), key: "").Depth;
             var expected = 28;
