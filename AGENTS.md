@@ -56,6 +56,7 @@ related tests.
 
 ## Code and project conventions
 
+- Use CRLF line endings unless specified otherwise in `.editorconfig`.
 - Follow `.editorconfig`, shared build settings, and the conventions used by nearby
   code. Preserve existing project and framework-specific build configuration.
 - Use APIs available on every target framework affected by the change. A newer
