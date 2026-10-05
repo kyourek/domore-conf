@@ -1,1 +1,0 @@
-dotnet .\sln\Domore.Release\bin\Debug\Domore.Release.dll %*

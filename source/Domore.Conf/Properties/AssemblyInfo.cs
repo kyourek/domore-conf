@@ -1,0 +1,8 @@
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+[assembly: ComVisible(false)]
+[assembly: InternalsVisibleTo("Domore.Conf.Cli")]
+[assembly: InternalsVisibleTo("Domore.Conf.ConfigurationManager")]
+[assembly: InternalsVisibleTo("Domore.Conf.Tests")]
+[assembly: InternalsVisibleTo("Domore.Logs.Conf")]
