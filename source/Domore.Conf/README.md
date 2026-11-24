@@ -55,6 +55,24 @@ AppSettings.Port = 8080
 
 Relative includes resolve from the containing file's directory. Later settings override earlier included settings. The default directive prefix is `@conf`; set `Conf.Special` or pass a different prefix to `Conf.Contain(source, special)` to change it.
 
+## Comments
+
+Set `Conf.Comment` to enable whole-line comments, for example `Conf.Comment = "//";`.
+The setting applies to the static container, newly created containers, `ConfFrom`,
+and `ConfFile`, including included files. Comments are disabled by default; setting
+the marker to null, an empty string, or whitespace disables them again.
+
+```text
+// Default settings
+    // Indented comments are also ignored
+AppSettings.Host = https://example.com
+AppSettings.Port = 8080
+```
+
+Matching is case-sensitive. Only lines beginning with the marker, optionally
+preceded by whitespace, are comments. Markers inside values and multiline values
+remain literal text; trailing comments are not supported.
+
 ## Nested values and collections
 
 For types with corresponding public properties, separate nested properties with dots and use brackets for list or dictionary entries:

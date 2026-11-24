@@ -878,4 +878,112 @@ ex. longmanualderived foo 1
                 .Property("Message")
                 .EqualTo("Invalid value: foo (Expected one of <double>)"));
     }
+
+    private sealed class RequiredTextCommand {
+        [CliRequired]
+        public string Text { get; set; } = "original";
+    }
+
+    private sealed class RequiredNumberCommand {
+        [CliRequired]
+        public int Count { get; set; } = 27;
+    }
+
+    [Test, NonParallelizable]
+    public void Configure_BindsNamedRequiredOptionWhenItMatchesCommentMarker() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "text";
+
+            var actual = Subject.Configure(new RequiredTextCommand(), "text=expected");
+
+            Assert.That(actual.Text, Is.EqualTo("expected"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
+
+    [Test, NonParallelizable]
+    public void Configure_BindsPositionalRequiredArgumentWhenItMatchesCommentMarker() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "direction";
+
+            var actual = Subject.Configure(new Move(), "left");
+
+            Assert.That(actual.Direction, Is.EqualTo(MoveDirection.Left));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
+
+    [Test, NonParallelizable]
+    public void Configure_ThrowsWhenRequiredPositionalArgumentIsMissingWithMatchingCommentMarker() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "direction";
+
+            var exception = Assert.Throws<CliRequiredNotFoundException>(() =>
+                Subject.Configure(new Move(), ""));
+
+            Assert.That(exception.Message, Is.EqualTo("Missing required: direction"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
+
+    [Test, NonParallelizable]
+    public void Configure_ThrowsForInvalidNamedRequiredValueWhenItMatchesCommentMarker() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "count";
+
+            var exception = Assert.Throws<CliConversionException>(() =>
+                Subject.Configure(new RequiredNumberCommand(), "count=invalid"));
+
+            Assert.That(exception.InnerException, Is.InstanceOf<ConfValueConverterException>());
+            Assert.That(((ConfValueConverterException)exception.InnerException).Value, Is.EqualTo("invalid"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
+
+    private sealed class CommentChangingConfValueConverter : ConfValueConverter {
+        public override object Convert(string value, ConfValueConverterState state) {
+            Conf.Comment = "Text";
+            return value;
+        }
+    }
+
+    private sealed class NestedCliConfTextCommand {
+        [ConfConverter(typeof(CommentChangingConfValueConverter))]
+        public string Trigger { get; set; }
+
+        [ConfText]
+        public NestedCliConfText Nested { get; set; } = new();
+    }
+
+    private sealed class NestedCliConfText {
+        public string Text { get; set; } = "original";
+    }
+
+    [Test, NonParallelizable]
+    public void Configure_DisablesCommentsForNestedConfTextAfterGlobalMarkerChanges() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "#";
+            var command = new NestedCliConfTextCommand();
+
+            Subject.Configure(command, "trigger=change nested=\"Text = expected\"");
+
+            Assert.That(command.Nested.Text, Is.EqualTo("expected"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
 }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Domore Code Plan"
+  short_description: "Plan substantial code changes for a clear handoff"
+  default_prompt: "Use $domore-code-plan to plan the requested code changes and save an implementation-ready document under agents/plans without committing it."

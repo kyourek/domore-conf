@@ -45,6 +45,19 @@ public sealed class Conf : IConf {
     }
 
     /// <summary>
+    /// Gets or sets the string that starts a whole-line comment, optionally preceded by whitespace.
+    /// </summary>
+    /// <remarks>
+    /// The default is null, which disables comments. Empty or whitespace-only strings also disable
+    /// comments. Matching is case-sensitive. Markers within values, including multiline values,
+    /// remain literal text. New containers inherit this setting when created.
+    /// </remarks>
+    public static string Comment {
+        get => _Container.Comment;
+        set => _Container.Comment = value;
+    }
+
+    /// <summary>
     /// Gets the <see cref="IConfLookup"/> of the static <see cref="IConfContainer"/>.
     /// </summary>
     public static IConfLookup Lookup =>
@@ -102,7 +115,11 @@ public sealed class Conf : IConf {
     /// <param name="special">The special conf key.</param>
     /// <returns>The created instance of <see cref="IConfContainer"/>.</returns>
     public static IConfContainer Contain(object source, string special) {
-        return new ConfContainer { Source = source, Special = special };
+        return new ConfContainer {
+            Source = source,
+            Special = special,
+            Comment = Comment
+        };
     }
 
     object IConf.Source =>

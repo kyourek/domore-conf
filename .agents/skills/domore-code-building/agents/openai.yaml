@@ -1,0 +1,4 @@
+interface:
+  display_name: "Domore Code Building"
+  short_description: "Build .NET and Visual C++ projects and run NUnit suites"
+  default_prompt: "Use $domore-code-building to build and validate the affected projects."

@@ -119,6 +119,7 @@ public sealed class ConfFile : IDisposable {
                 var conf = new ConfContainer {
                     Source = text,
                     Special = Conf.Special,
+                    Comment = Conf.Comment,
                     SourceDirectory = Directory,
                     InitialSources = [Path],
                     ContentProvider = Conf.ContentProvider

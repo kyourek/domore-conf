@@ -1,0 +1,4 @@
+interface:
+  display_name: "Domore Code Testing"
+  short_description: "Write and run focused NUnit tests in .NET projects"
+  default_prompt: "Use $domore-code-testing to add and run NUnit tests for the affected behavior."

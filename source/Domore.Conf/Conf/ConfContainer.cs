@@ -19,6 +19,7 @@ internal sealed class ConfContainer : IConfContainer {
                 ? provider.GetConfContent(Source)
                 : providerBase.GetConfContent(Source, InitialSources, new ConfContentProviderContext {
                     Special = Special,
+                    Comment = Comment,
                     BaseDirectory = SourceDirectory,
                     IncludeEmptyValues = IncludeEmptyStrings
                 });
@@ -51,6 +52,17 @@ internal sealed class ConfContainer : IConfContainer {
     }
 
     public string Special {
+        get;
+        set {
+            if (field != value) {
+                field = value;
+                Content = null;
+                Lookup = null;
+            }
+        }
+    }
+
+    public string Comment {
         get;
         set {
             if (field != value) {

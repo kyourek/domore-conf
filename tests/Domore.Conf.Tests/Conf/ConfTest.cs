@@ -149,4 +149,24 @@ Etiam semper mattis tincidunt. Sed in consequat elit. Fusce orci enim, rhoncus i
             Conf.Special = original;
         }
     }
+
+    [Test, NonParallelizable]
+    public void CommentIsUsedByStaticMethodsAndNewContainers() {
+        var previousComment = Conf.Comment;
+        var previousSource = Conf.Source;
+        const string text = "Text = ignored";
+        try {
+            Conf.Comment = "Text";
+            Conf.Source = text;
+
+            Assert.That(Conf.Configure(new C { Text = "original" }, key: "").Text, Is.EqualTo("original"));
+            Assert.That(Conf.Lookup.Count, Is.Zero);
+            Assert.That(Conf.Contain(text).Lookup.Count, Is.Zero);
+            Assert.That(Conf.Contain(text, "@conf").Lookup.Count, Is.Zero);
+        }
+        finally {
+            Conf.Comment = previousComment;
+            Conf.Source = previousSource;
+        }
+    }
 }

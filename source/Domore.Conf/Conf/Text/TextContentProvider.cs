@@ -1,5 +1,4 @@
-﻿using Domore.Conf.Extensions;
-using Domore.Conf.IO;
+﻿using Domore.Conf.IO;
 using Domore.Conf.Text.Parsing;
 using System;
 using System.Collections.Generic;
@@ -39,7 +38,11 @@ internal sealed class TextContentProvider : ConfContentProviderBase {
             var existingPair = existing[i];
             var existingPairKey = existingPair.Key;
             if (existingPairKey.StartsWith(specialKey)) {
-                var special = new TextContentSpecial().ConfFrom(existingPair.Content, key: specialKey);
+                var specialContainer = new ConfContainer {
+                    Source = existingPair.Content,
+                    ContentProvider = this
+                };
+                var special = specialContainer.Configure(new TextContentSpecial(), key: specialKey);
                 var inserted = 0;
                 var includes = special.Include;
                 if (includes?.Count > 0) {
@@ -88,7 +91,7 @@ internal sealed class TextContentProvider : ConfContentProviderBase {
             sourceList = [s];
         }
         var
-        p = Parse.Pairs(s, includeEmptyValues: context?.IncludeEmptyValues == true).ToList();
+        p = Parse.Pairs(s, includeEmptyValues: context?.IncludeEmptyValues == true, comment: context?.Comment).ToList();
         p = ConfigInclude(p, sourceList, context);
         var c = new ConfContent(
             pairs: p,

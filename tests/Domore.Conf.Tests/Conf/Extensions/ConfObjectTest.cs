@@ -886,4 +886,20 @@ more lines{
             () => obj.ConfFrom(""),
             Throws.TypeOf<ConfPopulatedCallbackSignatureInvalidException>());
     }
+
+    [Test, NonParallelizable]
+    public void ConfFromUsesTheConfiguredCommentMarker() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "StringProp";
+            var subject = new OnePropertyClass { StringProp = "original" };
+
+            subject.ConfFrom("StringProp = ignored", key: "");
+
+            Assert.That(subject.StringProp, Is.EqualTo("original"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
 }

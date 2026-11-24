@@ -45,6 +45,8 @@ Console.WriteLine(copy.Retries);     // 3
 
 The command name (the type name in lowercase by default) may appear in the line and is skipped. Tokens are separated by whitespace; wrap a token in single or double quotes to include spaces or `=`. Named values are written `name=value`, and names match properties (or `[Conf]` aliases) without regard to case.
 
+Comments are disabled while parsing CLI arguments, including nested values converted with `[ConfText]`, regardless of `Conf.Comment`.
+
 ## Display usage and manuals
 
 ```csharp

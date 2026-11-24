@@ -1,4 +1,5 @@
-﻿using Domore.Conf.Extensions;
+﻿using Domore.Conf.Converters;
+using Domore.Conf.Extensions;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -1266,6 +1267,202 @@ public sealed class ConfContainerTest {
             File.Delete(leafPath);
             Directory.Delete(nestedDirectory);
             Directory.Delete(directory);
+        }
+    }
+
+    [Test]
+    public void RelativeIncludeCanResolveAboveTheIncludingFileDirectory() {
+        var directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var includingDirectory = Path.Combine(directory, "including", "nested");
+        var targetDirectory = Path.Combine(directory, "path", "to");
+        Directory.CreateDirectory(includingDirectory);
+        Directory.CreateDirectory(targetDirectory);
+        var includingPath = Path.Combine(includingDirectory, "root.conf");
+        var includedPath = Path.Combine(targetDirectory, "config.conf");
+        try {
+            File.WriteAllText(includingPath, "##.include = ../../path/to/config.conf");
+            File.WriteAllText(includedPath, "depth = 32");
+
+            var conf = Conf.Contain(includingPath, "##");
+            var actual = conf.Configure(new Shipwreck(), key: "").Depth;
+
+            Assert.That(actual, Is.EqualTo(32));
+        }
+        finally {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private sealed class Settings {
+        public string Text { get; set; } = "original";
+    }
+
+    [TestCase("//", "", "\n")]
+    [TestCase("#", " \t", "\r\n")]
+    [TestCase("--", "\t", "\n")]
+    [TestCase("NOTE", "\u2003", "\r\n")]
+    public void WholeLineCommentsAreIgnored(string marker, string whitespace, string newline) {
+        var conf = new ConfContainer {
+            Comment = marker,
+            Source = $"{whitespace}{marker} Text = ignored; Text = also ignored{newline}" +
+                $"Text = expected{newline}{whitespace}{marker} Text = ignored at EOF"
+        };
+
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("expected"));
+        Assert.That(conf.Lookup.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SingleLineCommentConsumesSemicolonsAndTheRestOfTheSource() {
+        var conf = new ConfContainer { Comment = "//", Source = "// Text = ignored; Text = also ignored" };
+
+        Assert.That(conf.Lookup.Count, Is.Zero);
+    }
+
+    [TestCase("https://example.com")]
+    [TestCase("// literal value")]
+    [TestCase("\"// quoted value\"")]
+    [TestCase("expected // trailing text")]
+    public void MarkersWithinValuesRemainLiteral(string value) {
+        var conf = new ConfContainer { Comment = "//", Source = $"Text = {value}" };
+
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo(value));
+    }
+
+    [TestCase("Text = expected\r// literal\nOther = value")]
+    [TestCase("Text = expected\r  // literal\r\nOther = value")]
+    [TestCase("Text = expected\r// literal")]
+    public void MarkersAfterALoneCarriageReturnRemainLiteral(string source) {
+        var expected = new ConfContainer { Source = source }.Configure(new Settings(), key: "").Text;
+        var conf = new ConfContainer { Comment = "//", Source = source };
+
+        Assert.That(expected, Is.Not.EqualTo("original"));
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo(expected));
+    }
+
+    [TestCase("\n")]
+    [TestCase("\r\n")]
+    public void LoneCarriageReturnDoesNotEndAComment(string newline) {
+        var conf = new ConfContainer {
+            Comment = "//",
+            Source = $"Text = expected{newline}// Text = ignored\rText = also ignored{newline}"
+        };
+
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("expected"));
+    }
+
+    [TestCase("{", "}")]
+    [TestCase("\"\"\"", "\"\"\"")]
+    [TestCase("'''", "'''")]
+    public void MarkersWithinMultilineValuesRemainLiteral(string open, string close) {
+        const string value = "first\n// Text = literal\n  // still literal\nlast";
+        var conf = new ConfContainer {
+            Comment = "//",
+            Source = $"// ignored\nText = {open}\n{value}\n{close}\n// ignored too"
+        };
+
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo(value));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase(" \t")]
+    public void MissingOrBlankMarkerDisablesComments(string marker) {
+        var conf = new ConfContainer { Comment = marker, Source = "Text = expected" };
+
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("expected"));
+    }
+
+    [Test]
+    public void MarkerMatchingIsCaseSensitive() {
+        var conf = new ConfContainer { Comment = "TEXT", Source = "Text = expected" };
+
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("expected"));
+    }
+
+    [Test]
+    public void ChangingCommentInvalidatesParsedContentAndLookup() {
+        var conf = new ConfContainer { Source = "Text = expected" };
+        Assert.That(conf.Lookup.Value("Text"), Is.EqualTo("expected"));
+
+        conf.Comment = "Text";
+
+        Assert.That(conf.Lookup.Count, Is.Zero);
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("original"));
+
+        conf.Comment = null;
+
+        Assert.That(conf.Lookup.Value("Text"), Is.EqualTo("expected"));
+        Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("expected"));
+    }
+
+    [Test]
+    public void IncludedFilesInheritCommentsAndCommentedDirectivesAreIgnored() {
+        var path = Path.GetTempFileName();
+        try {
+            File.WriteAllText(path, "// Text = ignored; Text = also ignored\nText = included\n// Text = ignored");
+            var conf = new ConfContainer {
+                Special = "@conf",
+                Comment = "//",
+                Source = $"// @conf.include = nonexistent.conf\n@conf.include = {path}"
+            };
+
+            Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("included"));
+            Assert.That(conf.Lookup.Contains("//@conf.include"), Is.False);
+        }
+        finally {
+            File.Delete(path);
+        }
+    }
+
+    [Test, NonParallelizable]
+    public void ContainerCommentsRemainIndependentOfTheGlobalSetting() {
+        var previousComment = Conf.Comment;
+        var path = Path.GetTempFileName();
+        try {
+            File.WriteAllText(path, "Text = included");
+            Conf.Comment = "@conf";
+            var conf = new ConfContainer {
+                Special = "@conf",
+                Source = $"@conf.include = {path}"
+            };
+
+            Assert.That(conf.Configure(new Settings(), key: "").Text, Is.EqualTo("included"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+            File.Delete(path);
+        }
+    }
+
+    private sealed class ObjectWithConfText {
+        [ConfText]
+        public ConfTextValue Nested { get; set; } = new();
+    }
+
+    private sealed class ConfTextValue {
+        public string Text { get; set; } = "original";
+    }
+
+    [TestCase("#", "Text", "expected")]
+    [TestCase("Text", "#", "original")]
+    [NonParallelizable]
+    public void NestedConfTextUsesTheCommentMarkerCapturedByItsContainer(
+        string initialComment,
+        string changedComment,
+        string expected) {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = initialComment;
+            var container = Conf.Contain("ObjectWithConfText.Nested = {\nText = expected\n}");
+            Conf.Comment = changedComment;
+
+            var actual = container.Configure(new ObjectWithConfText()).Nested.Text;
+
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+        finally {
+            Conf.Comment = previousComment;
         }
     }
 }

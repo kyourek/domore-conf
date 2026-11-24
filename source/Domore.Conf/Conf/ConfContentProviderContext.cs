@@ -40,6 +40,7 @@ internal sealed class ConfContentProviderContext {
     }
 
     public string Special { get; set; }
+    public string Comment { get; set; }
     public string BaseDirectory { get; set; }
     public bool IncludeEmptyValues { get; set; }
 }

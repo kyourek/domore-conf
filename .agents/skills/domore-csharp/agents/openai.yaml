@@ -1,0 +1,4 @@
+interface:
+  display_name: "Domore C# Conventions"
+  short_description: "Apply C# and .NET project conventions"
+  default_prompt: "Use $domore-csharp when writing or editing C# code."

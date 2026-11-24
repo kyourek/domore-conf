@@ -17,7 +17,14 @@ public sealed class ConfTextAttribute : ConfConverterAttribute {
             if (obj == null) {
                 obj = Activator.CreateInstance(state.Property.PropertyType);
             }
-            return obj.ConfFrom(value, key: "");
+            var comment = state.Conf is ConfContainer container
+                ? container.Comment
+                : Conf.Comment;
+            return obj.ConfFrom(
+                value,
+                key: "",
+                includeEmptyStrings: false,
+                comment: comment);
         }
     }
 }

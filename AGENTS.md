@@ -217,19 +217,3 @@ code more complicated, such as when the field must be `volatile`.
 - Prefer explicit task signals with bounded waits over timing-dependent sleeps.
 - Keep tests and shared test helpers compatible with all applicable target
   frameworks.
-
-## Code reviews
-
-- When asked to review code, inspect the full requested scope and record each
-  finding with its impact, a suggested resolution, and file and line references
-  where applicable. Read any existing review findings first, preserve their
-  identifiers, and avoid duplicate findings.
-- When findings use stable issue numbers, assign new findings numbers greater than
-  the highest number already used. Do not renumber or reuse numbers, including for
-  resolved findings.
-- When asked to fix review findings, work only on the specified issues. Prefer
-  regression tests that demonstrate each issue before fixing it. Keep resolved
-  findings in the review record and mark them resolved.
-- Before reporting completion, inspect the final diff and any new or untracked
-  files for unintended changes, whitespace problems, and accidental public API
- additions.

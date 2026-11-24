@@ -5,6 +5,32 @@ using System.Collections.Generic;
 namespace Domore.Conf.Text.Parsing;
 
 internal sealed class TokenParser {
+    private static bool StartsComment(string text, int index, string comment) {
+        var commentsDisabled = string.IsNullOrWhiteSpace(comment);
+        if (commentsDisabled) {
+            return false;
+        }
+        var startsLine = index == 0 || text[index - 1] == '\n';
+        if (startsLine != true) {
+            return false;
+        }
+        var withinLine = index < text.Length && text[index] != '\n';
+        while (withinLine) {
+            var markerMatches = text.Length - index >= comment.Length &&
+                                string.CompareOrdinal(text, index, comment, 0, comment.Length) == 0;
+            if (markerMatches) {
+                return true;
+            }
+            var whitespace = char.IsWhiteSpace(text[index]);
+            if (whitespace != true) {
+                return false;
+            }
+            index++;
+            withinLine = index < text.Length && text[index] != '\n';
+        }
+        return false;
+    }
+
     public static IConfKey Key(string s) {
         if (s is null) {
             throw new ArgumentNullException(nameof(s));
@@ -36,7 +62,7 @@ internal sealed class TokenParser {
         return key;
     }
 
-    public IEnumerable<IConfPair> Pairs(string text, bool includeEmptyValues = false) {
+    public IEnumerable<IConfPair> Pairs(string text, bool includeEmptyValues = false, string comment = null) {
         if (text is null) {
             throw new ArgumentNullException(nameof(text));
         }
@@ -50,6 +76,16 @@ internal sealed class TokenParser {
         var sep = textContainsNewLine ? '\n' : ';';
         var token = new KeyBuilder(sep) as Token;
         for (var i = 0; i < text.Length; i++) {
+            var startsComment = token is not MultiLineValueBuilder && StartsComment(text, i, comment);
+            if (startsComment) {
+                var withinComment = i < text.Length && text[i] != '\n';
+                while (withinComment) {
+                    i++;
+                    withinComment = i < text.Length && text[i] != '\n';
+                }
+                token = new KeyBuilder(sep);
+                continue;
+            }
             if (token == null) {
                 break;
             }

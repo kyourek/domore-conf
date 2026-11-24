@@ -31,8 +31,13 @@ public static class ConfObject {
     /// <param name="includeEmptyStrings">True to set string properties to empty strings when their values are empty.</param>
     /// <returns>The populated instance of <typeparamref name="T"/>.</returns>
     internal static T ConfFrom<T>(this T obj, string text, string key, bool includeEmptyStrings) {
+        return ConfFrom(obj, text, key, includeEmptyStrings, Conf.Comment);
+    }
+
+    internal static T ConfFrom<T>(this T obj, string text, string key, bool includeEmptyStrings, string comment) {
         return new ConfContainer {
             Source = text,
+            Comment = comment,
             ContentProvider = ContentProvider,
             IncludeEmptyStrings = includeEmptyStrings
         }.Configure(obj, key);

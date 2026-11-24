@@ -246,4 +246,23 @@ internal sealed class ConfFileTest {
         SpinWait.SpinUntil(() => foo.Baz == 99);
         Assert.Pass();
     }
+
+    [Test, NonParallelizable]
+    public void ConfigureUsesTheConfiguredCommentMarker() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "Bar";
+            Content = "Bar = ignored";
+            var foo = new Foo { Bar = "original" };
+            Key = "";
+            Target = foo;
+
+            Subject.Configure();
+
+            Assert.That(foo.Bar, Is.EqualTo("original"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
 }
