@@ -169,4 +169,33 @@ Etiam semper mattis tincidunt. Sed in consequat elit. Fusce orci enim, rhoncus i
             Conf.Source = previousSource;
         }
     }
+
+    [Test, NonParallelizable]
+    public void ContainWithCommentEnablesCommentsWhenGlobalCommentIsNull() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = null;
+            var container = Conf.Contain("// C.Text = ignored\nC.Text = expected", "@conf", "//");
+
+            Assert.That(container.Lookup.Count, Is.EqualTo(1));
+            Assert.That(container.Configure(new C()).Text, Is.EqualTo("expected"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
+
+    [Test, NonParallelizable]
+    public void ContainWithNullCommentDisablesCommentsWhenGlobalCommentIsSet() {
+        var previousComment = Conf.Comment;
+        try {
+            Conf.Comment = "C.Text";
+            var container = Conf.Contain("C.Text = expected", "@conf", null);
+
+            Assert.That(container.Configure(new C()).Text, Is.EqualTo("expected"));
+        }
+        finally {
+            Conf.Comment = previousComment;
+        }
+    }
 }

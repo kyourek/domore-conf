@@ -115,10 +115,21 @@ public sealed class Conf : IConf {
     /// <param name="special">The special conf key.</param>
     /// <returns>The created instance of <see cref="IConfContainer"/>.</returns>
     public static IConfContainer Contain(object source, string special) {
+        return Contain(source, special, Comment);
+    }
+
+    /// <summary>
+    /// Creates an instance of <see cref="IConfContainer"/> around the specified <paramref name="source"/>.
+    /// </summary>
+    /// <param name="source">The conf source.</param>
+    /// <param name="special">The special conf key.</param>
+    /// <param name="comment">The string that starts a whole-line comment, optionally preceded by whitespace.</param>
+    /// <returns>The created instance of <see cref="IConfContainer"/>.</returns>
+    public static IConfContainer Contain(object source, string special, string comment) {
         return new ConfContainer {
             Source = source,
             Special = special,
-            Comment = Comment
+            Comment = comment
         };
     }
 
